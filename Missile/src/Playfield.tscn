@@ -1,0 +1,111 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Playfield.gd" type="Script" id=1]
+[ext_resource path="res://assets/cursor.png" type="Texture" id=2]
+[ext_resource path="res://assets/city.png" type="Texture" id=3]
+[ext_resource path="res://Base.tscn" type="PackedScene" id=4]
+[ext_resource path="res://ScoreOverlay.tscn" type="PackedScene" id=5]
+[ext_resource path="res://assets/sounds/wave_start.wav" type="AudioStream" id=6]
+
+[sub_resource type="GDScript" id=1]
+
+[sub_resource type="RectangleShape2D" id=2]
+extents = Vector2( 26.0823, 11.86 )
+
+[node name="Playfield" type="Node2D"]
+script = ExtResource( 1 )
+
+[node name="Background" type="Polygon2D" parent="."]
+position = Vector2( 0.749146, 0.749146 )
+color = Color( 0, 0, 0, 1 )
+polygon = PoolVector2Array( 0, 0, 1020, 0, 1020, 600, 0, 600 )
+
+[node name="Ground" type="Polygon2D" parent="."]
+color = Color( 0.588235, 0.588235, 0, 1 )
+polygon = PoolVector2Array( 0, 550, 1020, 550, 1020, 600, 0, 600 )
+
+[node name="Cursor" type="Sprite" parent="."]
+position = Vector2( 5, 7 )
+scale = Vector2( 0.68, 0.68 )
+texture = ExtResource( 2 )
+script = SubResource( 1 )
+
+[node name="Alpha" parent="." instance=ExtResource( 4 )]
+position = Vector2( 135.798, 550 )
+
+[node name="Delta" parent="." instance=ExtResource( 4 )]
+position = Vector2( 500.134, 550 )
+
+[node name="Omega" parent="." instance=ExtResource( 4 )]
+position = Vector2( 903.29, 550 )
+
+[node name="City1" type="Area2D" parent="."]
+position = Vector2( 230, 540 )
+
+[node name="CityShape" type="CollisionShape2D" parent="City1"]
+shape = SubResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="City1/CityShape"]
+scale = Vector2( 0.5, 0.219 )
+texture = ExtResource( 3 )
+
+[node name="City2" type="Area2D" parent="."]
+position = Vector2( 311.829, 540 )
+
+[node name="CityShape" type="CollisionShape2D" parent="City2"]
+shape = SubResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="City2/CityShape"]
+scale = Vector2( 0.5, 0.219 )
+texture = ExtResource( 3 )
+
+[node name="City3" type="Area2D" parent="."]
+position = Vector2( 391.804, 540 )
+
+[node name="CityShape" type="CollisionShape2D" parent="City3"]
+shape = SubResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="City3/CityShape"]
+scale = Vector2( 0.5, 0.219 )
+texture = ExtResource( 3 )
+
+[node name="City4" type="Area2D" parent="."]
+position = Vector2( 603.304, 540 )
+
+[node name="CityShape" type="CollisionShape2D" parent="City4"]
+shape = SubResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="City4/CityShape"]
+scale = Vector2( 0.5, 0.219 )
+texture = ExtResource( 3 )
+
+[node name="City5" type="Area2D" parent="."]
+position = Vector2( 686.804, 540 )
+
+[node name="CityShape" type="CollisionShape2D" parent="City5"]
+shape = SubResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="City5/CityShape"]
+scale = Vector2( 0.5, 0.219 )
+texture = ExtResource( 3 )
+
+[node name="City6" type="Area2D" parent="."]
+position = Vector2( 778.304, 540 )
+
+[node name="CityShape" type="CollisionShape2D" parent="City6"]
+shape = SubResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="City6/CityShape"]
+scale = Vector2( 0.5, 0.219 )
+texture = ExtResource( 3 )
+
+[node name="ScoreOverlay" parent="." instance=ExtResource( 5 )]
+
+[node name="StartWave" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 6 )
+volume_db = -24.318
+pitch_scale = 1.03
+
+[node name="WaveTimer" type="Timer" parent="."]
+wait_time = 3.0
+[connection signal="timeout" from="WaveTimer" to="." method="_on_WaveTimer_timeout"]
