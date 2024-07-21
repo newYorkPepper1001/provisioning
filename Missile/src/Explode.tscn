@@ -1,0 +1,109 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://assets/sounds/Bomb_Exploding-Sound_Explorer-68256487.wav" type="AudioStream" id=1]
+[ext_resource path="res://assets/boom.png" type="Texture" id=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "# Explode Scene
+extends Node2D
+
+var rng = RandomNumberGenerator.new()
+
+signal explode_end
+
+
+const EXPLODE_DECAY = 1.8
+const DEFAULT_MAX_SIZE = 0.8
+
+var phase = 0
+var boom_size = Vector2(0, 0)
+var start_loc setget set_start
+var end_loc = Vector2(0, 0)
+var cur_loc = null
+var max_size = DEFAULT_MAX_SIZE
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	$Area2D/BoomCollision.scale = boom_size
+	$Area2D/BoomCollision.disabled = true
+	
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+# Use this to size the explosion... 
+func _process(_delta):
+	
+	if phase == 0:
+		on_explode()
+	elif phase == 1:
+		grow()
+	else:
+		shrink()
+
+	if boom_size.x < 0:
+		on_end()			
+
+func on_explode():
+	$Area2D/BoomCollision/Boom.visible = true
+	$ExplodeSound.play()
+	$Area2D/BoomCollision.disabled = false
+	phase = 1
+
+func grow():
+	if boom_size.x < max_size:
+		boom_size.x += .01
+		boom_size.y += .01
+	else:
+		phase = 2
+		
+	flicker_boom()
+	$Area2D/BoomCollision.scale = boom_size
+
+func shrink():
+	if boom_size.x > 0:
+		boom_size.x -= .01
+	if boom_size.y > 0:
+		boom_size.y -= .01
+	
+	flicker_boom()
+	$Area2D/BoomCollision.scale = boom_size
+	
+
+func flicker_boom():
+	var red = rng.randf_range(.8, 1)
+	var blue = rng.randf_range(.9, 1)
+	var green = blue
+	var new_color = Color(red, green, blue)
+	$Area2D/BoomCollision/Boom.self_modulate = new_color
+	
+	
+	
+func on_end():
+	emit_signal(\"explode_end\")
+	get_parent().remove_child(self)
+	
+	
+func set_start(new_value):
+	start_loc = new_value - position
+
+func set_max_size(new_value):
+	max_size = new_value
+"
+
+[sub_resource type="CircleShape2D" id=2]
+radius = 47.6189
+
+[node name="Missile" type="Node2D"]
+script = SubResource( 1 )
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="BoomCollision" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource( 2 )
+
+[node name="Boom" type="Sprite" parent="Area2D/BoomCollision"]
+texture = ExtResource( 2 )
+
+[node name="ExplodeSound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 1 )
+volume_db = -23.282
