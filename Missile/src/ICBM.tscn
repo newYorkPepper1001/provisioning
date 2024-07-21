@@ -1,0 +1,190 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://assets/icbm.png" type="Texture" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "# ICBM Scene
+extends Node2D
+
+var Explode = preload(\"res://Explode.tscn\")
+
+var rng = RandomNumberGenerator.new()
+
+var targets setget set_targets
+
+signal icbm_hit
+
+var attack_color = Color(0, 0, 100)
+var phase = 0
+var start_loc = Vector2(0, 0)
+var end_loc = Vector2(0, 0)
+var cur_loc = null
+var missile_speed = 2
+var mirv = false
+var mirv_child = false
+var mirv_target_y
+var mirv_splits
+var parent_start_loc
+var parent_split_loc
+var bomber_child = false
+var mirv_can_split = true
+var mirv_too_low = false
+
+signal mirv_splitting(start_loc, end_loc, can_sub_split)
+
+signal mirv_hit(splits)
+
+var missile_dir = Vector2(0,0)
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	rng.randomize()
+	if missile_speed == 0:
+		missile_speed = 4
+
+	if not mirv_child and not bomber_child:
+		var x = rng.randf_range(0, 1000)
+		start_loc = Vector2(x, 0)
+		var offset = randi() % targets.size()
+		end_loc = targets[offset] # Random base or city location
+	var viewport = get_viewport_rect().size
+	if mirv and start_loc.y + 10 < 5 * viewport.y / 8:
+		mirv_target_y = rng.randf_range(max(start_loc.y + 10, viewport.y / 4), 5 * viewport.y / 8)
+	elif mirv:
+		mirv_too_low = true
+			
+
+	$ICBMArea.position = start_loc
+	var velocity = start_loc.direction_to(end_loc)
+	var angle = rad2deg(velocity.angle()) + 90
+	$ICBMArea.set_rotation_degrees(angle)
+	var _err = $ICBMArea.connect(\"area_entered\", self, \"icbm_hit\")
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+# Use this to size the explosion... 
+func _process(_delta):
+	
+	if phase == 0:
+		move_missile()
+	elif phase == 1:
+		on_explode()
+
+func _draw():
+	if cur_loc != null && phase == 0:
+#		draw_line(start_loc, end_loc, Color(30,30,30)) # debug
+		draw_line(start_loc, cur_loc, attack_color)
+
+
+func on_explode():
+	$ICBMArea/CollisionShape2D/Scud.visible = false
+	
+	var explode_instance = Explode.instance()
+	explode_instance.position = $ICBMArea.position
+	add_child(explode_instance)
+	
+	phase = 2
+	
+	explode_instance.connect(\"explode_end\", self, \"_on_icbm_explode\")
+	update()
+
+	
+func move_missile():
+	var old_position = $ICBMArea.position
+	var velocity = start_loc.direction_to(end_loc) * missile_speed
+	cur_loc = old_position + velocity
+	
+	$ICBMArea.position = cur_loc
+	update()
+	if mirv and mirv_can_split and not mirv_too_low and cur_loc.y > mirv_target_y:
+		mirv_can_split = false
+		var target
+		var mirv_targets = targets.duplicate(true) # Create clone to not mess with original array
+		var viewport = get_viewport_rect().size
+		for _i in range(mirv_splits):
+			target = randi() % mirv_targets.size()
+			emit_signal(\"mirv_splitting\", cur_loc, mirv_targets[target], cur_loc.y < (3 * viewport.y / 4))
+			mirv_targets.remove(target)
+		# on_end()
+	elif cur_loc.y > end_loc.y:
+		phase = 1
+
+
+func icbm_hit(_object):
+	if phase == 0:
+		phase = 1
+
+	
+func _on_icbm_explode():
+	if mirv and mirv_can_split:
+		emit_signal(\"mirv_hit\", mirv_splits)
+	else:
+		emit_signal(\"icbm_hit\")
+	on_end()
+
+
+func on_end():
+	queue_free()
+
+
+func set_targets(new_targets):
+	targets = new_targets
+
+
+func set_color(new_value):
+	attack_color = new_value
+
+
+func set_speed(new_value):
+	missile_speed = new_value
+
+
+func set_mirv(new_boolean):
+	mirv = new_boolean
+
+
+func set_mirv_child(new_boolean):
+	mirv_child = new_boolean
+
+
+func set_mirv_splits(new_value):
+	mirv_splits = new_value
+
+
+func set_start_loc(new_value):
+	start_loc = new_value
+
+
+func set_end_loc(new_value):
+	end_loc = new_value
+
+
+func set_parent_start_loc(new_value):
+	parent_start_loc = new_value
+
+
+func set_parent_split_loc(new_value):
+	parent_split_loc = new_value
+
+
+func set_bomber_child(new_boolean):
+	bomber_child = new_boolean
+"
+
+[sub_resource type="RectangleShape2D" id=2]
+extents = Vector2( 1.94781, 6.59768 )
+
+[node name="ICBM" type="Node2D"]
+script = SubResource( 1 )
+
+[node name="ICBMArea" type="Area2D" parent="."]
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ICBMArea"]
+shape = SubResource( 2 )
+
+[node name="Scud" type="Sprite" parent="ICBMArea/CollisionShape2D"]
+position = Vector2( 0.118118, 0.833971 )
+scale = Vector2( 0.3, 0.3 )
+texture = ExtResource( 1 )
